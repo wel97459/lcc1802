@@ -201,8 +201,8 @@ control(Tokenrow *trp)
 		}
 		--ifdepth;
 		--cursource->ifdepth;
-		if (trp->lp - trp->bp != 3)
-			error(WARNING, "Syntax error in #endif");
+		if (trp->lp - trp->bp != 4)
+			error(WARNING, "Syntax error in #endif, %d", trp->lp - trp->bp);
 		break;
 
 	case KERROR:
