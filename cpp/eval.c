@@ -104,12 +104,15 @@ eval(Tokenrow *trp, int kw)
 {
 	Token *tp;
 	Nlist *np;
-	int ntok, rand;
-
+	int ntok, rand, line = 107;
+	char str[255];
 	trp->tp++;
+	rand = trp->lp - trp->bp;
 	if (kw==KIFDEF || kw==KIFNDEF) {
-		if (trp->lp - trp->bp != 4 || trp->tp->type!=NAME) {
-			error(ERROR, "Syntax error in #ifdef/#ifndef");
+		if (rand != 5 && rand != 4 || trp->tp->type!=NAME) {
+			strncpy(str, (char*)trp->tp->t, trp->tp->len);
+			str[trp->tp->len] = 0;
+			error(ERROR, "Syntax error in #ifdef/#ifndef %d, %d, %d, %d, %s", rand, kw, trp->tp->type, trp->tp->len, str);
 			return 0;
 		}
 		np = lookup(trp->tp, 0);
@@ -122,8 +125,14 @@ eval(Tokenrow *trp, int kw)
 	vp = vals;
 	op = ops;
 	*op++ = END;
-	for (rand=0, tp = trp->bp+ntok; tp < trp->lp; tp++) {
+	error(WARNING,"Starting:");
+	for (rand=0, tp = trp->bp+ntok; tp < trp->lp+1; tp++) {
+		strncpy(str, (char*)tp->t, tp->len);
+		str[tp->len] = 0;
+		fprintf(stderr, "len: %d\n", tp->len);
+		fprintf(stderr, "OP Type: %d, %s\n", tp->type, str);
 		switch(tp->type) {
+		case UNCLASS:
 		case WS:
 		case NL:
 			continue;
@@ -134,8 +143,10 @@ eval(Tokenrow *trp, int kw)
 		case NUMBER:
 		case CCON:
 		case STRING:
-			if (rand)
+			if (rand){
+				line = 141;
 				goto syntax;
+			}
 			if (vp == &vals[NSTAK]) {
 				error(ERROR, "Eval botch (stack overflow)");
 				return 0;
@@ -148,9 +159,10 @@ eval(Tokenrow *trp, int kw)
 		case DEFINED:
 		case TILDE:
 		case NOT:
-			if (rand)
+			if (rand){
+				line = 141;
 				goto syntax;
-			*op++ = tp->type;
+			}			*op++ = tp->type;
 			continue;
 
 		/* unary-binary */
@@ -171,8 +183,10 @@ eval(Tokenrow *trp, int kw)
 		case LAND: case LOR: case SLASH: case PCT:
 		case LT: case GT: case CIRC: case OR: case QUEST:
 		case COLON: case COMMA:
-			if (rand==0)
+			if (rand==0){
+				line = 181;
 				goto syntax;
+			}
 			if (evalop(priority[tp->type])!=0)
 				return 0;
 			*op++ = tp->type;
@@ -180,14 +194,18 @@ eval(Tokenrow *trp, int kw)
 			continue;
 
 		case LP:
-			if (rand)
+			if (rand){
+				line = 191;
 				goto syntax;
+			}
 			*op++ = LP;
 			continue;
 
 		case RP:
-			if (!rand)
+			if (!rand){
+				line = 200;
 				goto syntax;
+			}
 			if (evalop(priority[RP])!=0)
 				return 0;
 			if (op<=ops || op[-1]!=LP) {
@@ -197,12 +215,14 @@ eval(Tokenrow *trp, int kw)
 			continue;
 
 		default:
-			error(ERROR,"Bad operator (%t) in #if/#elsif", tp);
+			error(ERROR,"Bad operator in #if/#elsif");
 			return 0;
 		}
 	}
-	if (rand==0)
+	if (rand==0){
+		line = 217;
 		goto syntax;
+	}
 	if (evalop(priority[END])!=0)
 		return 0;
 	if (op!=&ops[1] || vp!=&vals[1]) {
@@ -213,7 +233,7 @@ eval(Tokenrow *trp, int kw)
 		error(ERROR, "Undefined expression value");
 	return vals[0].val;
 syntax:
-	error(ERROR, "Syntax error in #if/#elsif");
+	error(ERROR, "Syntax error in #if/#elsif Line: %d", line);
 	return 0;
 }
 
