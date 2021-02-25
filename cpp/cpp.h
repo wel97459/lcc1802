@@ -24,7 +24,7 @@ enum toktype { END, UNCLASS, NAME, NUMBER, STRING, CCON, NL, WS, DSHARP,
 		ASPLUS, ASMINUS, ASSTAR, ASSLASH, ASPCT, ASCIRC, ASLSH,
 		ASRSH, ASOR, ASAND, ELLIPS,
 		DSHARP1, NAME1, DEFINED, UMINUS };
-
+		
 enum kwtype { KIF, KIFDEF, KIFNDEF, KELIF, KELSE, KENDIF, KINCLUDE, KDEFINE,
 		KUNDEF, KLINE, KERROR, KPRAGMA, KDEFINED,
 		KLINENO, KFILE, KDATE, KTIME, KSTDC, KEVAL };
@@ -86,6 +86,8 @@ typedef	struct	includelist {
 #define	quicklook(a,b)	(namebit[(a)&077] & (1<<((b)&037)))
 #define	quickset(a,b)	namebit[(a)&077] |= (1<<((b)&037))
 extern	unsigned long namebit[077+1];
+
+const char toktypeStrs[60][16];
 
 enum errtype { WARNING, ERROR, FATAL };
 

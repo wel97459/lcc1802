@@ -149,12 +149,10 @@ makespace(Tokenrow *trp)
 {
 	uchar *tt;
 	Token *tp = trp->tp;
-
 	if (tp >= trp->lp)
 		return;
 	if (tp->wslen) {
-		if (tp->flag&XPWS
-		 && (wstab[tp->type] || trp->tp>trp->bp && wstab[(tp-1)->type])) {
+		if (tp->flag&XPWS && (wstab[tp->type] || trp->tp>trp->bp && wstab[(tp-1)->type])) {
 			tp->wslen = 0;
 			return;
 		}
@@ -261,28 +259,28 @@ void
 peektokens(Tokenrow *trp, char *str)
 {
 	Token *tp;
-
+	int onetime = 0;
 	tp = trp->tp;
+
 	flushout();
-	if (str)
-		fprintf(stderr, "%s ", str);
-	if (tp<trp->bp || tp>trp->lp)
-		fprintf(stderr, "(tp offset %d) ", (int)(tp-trp->bp));
-	for (tp=trp->bp; tp<trp->lp && tp<trp->bp+32; tp++) {
-		if (tp->type!=NL) {
-			int c = tp->t[tp->len];
-			tp->t[tp->len] = 0;
-			fprintf(stderr, "%s", tp->t);
-			tp->t[tp->len] = c;
+	if (tp<trp->bp || tp>trp->lp){
+		if (str && !onetime){
+			fprintf(stderr, "%s ", str);
+			onetime = 1;
 		}
-		if (tp->type==NAME) {
-			fprintf(stderr, tp==trp->tp?"{*":"{");
-			prhideset(tp->hideset);
-			fprintf(stderr, "} ");
-		} else
-			fprintf(stderr, tp==trp->tp?"{%x*} ":"{%x} ", tp->type);
+		fprintf(stderr, "(tp offset %d) ", (int)(tp-trp->bp));
 	}
-	fprintf(stderr, "\n");
+	for (tp=trp->bp; tp<trp->lp && tp<trp->bp+32; tp++) {
+		if (tp->type != NL && tp->type != UNCLASS){
+			if (str && !onetime){
+				fprintf(stderr, "%s ", str);
+				onetime = 1;
+			}
+			fprintf(stderr, tp==trp->tp?"{Type: %s*, '%.*s'} ":"{Type: %s, '%.*s'} ", toktypeStrs[tp->type], tp->len, (char*)tp->t);
+		}
+	}
+	if (onetime)
+		fprintf(stderr, "\n");
 	fflush(stderr);
 }
 
@@ -293,10 +291,12 @@ puttokens(Tokenrow *trp)
 	int len;
 	uchar *p;
 
-	if (verbose)
-		peektokens(trp, "");
+	if(verbose)
+		peektokens(trp, "Row:\n");
 	tp = trp->bp;
 	for (; tp<trp->lp; tp++) {
+		if (tp->type == UNCLASS)
+			continue;
 		len = tp->len+tp->wslen;
 		p = tp->t-tp->wslen;
 		while (tp<trp->lp-1 && p+len == (tp+1)->t - (tp+1)->wslen) {

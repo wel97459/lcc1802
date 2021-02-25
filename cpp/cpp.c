@@ -19,6 +19,17 @@ int	skipping;
 
 char rcsid[] = "$Revision$ $Date$";
 
+const char toktypeStrs[60][16] = {
+	"END", "UNCLASS", "NAME", "NUMBER", "STRING", "CCON", "NL", "WS", "DSHARP",
+	"EQ", "NEQ", "LEQ", "GEQ", "LSH", "RSH", "LAND", "LOR", "PPLUS", "MMINUS",
+	"ARROW", "SBRA", "SKET", "LP", "RP", "DOT", "AND", "STAR", "PLUS", "MINUS",
+	"TILDE", "NOT", "SLASH", "PCT", "LT", "GT", "CIRC", "OR", "QUEST",
+	"COLON", "ASGN", "COMMA", "SHARP", "SEMIC", "CBRA", "CKET",
+	"ASPLUS", "ASMINUS", "ASSTAR", "ASSLASH", "ASPCT", "ASCIRC", "ASLSH",
+	"ASRSH", "ASOR", "ASAND", "ELLIPS",
+	"DSHARP1", "NAME1", "DEFINED", "UMINUS"
+};
+
 int
 main(int argc, char **argv)
 {
@@ -188,7 +199,7 @@ control(Tokenrow *trp)
 		}
 		if (ifsatisfied[ifdepth]==2)
 			error(ERROR, "#else after #else");
-		if (trp->lp - trp->bp != 3)
+		if (trp->lp - trp->bp != 4 && trp->lp - trp->bp != 3)
 			error(ERROR, "Syntax error in #else");
 		skipping = ifsatisfied[ifdepth]? ifdepth: 0;
 		ifsatisfied[ifdepth] = 2;
@@ -294,9 +305,12 @@ error(enum errtype type, char *string, ...)
 				break;
 			case 't':
 				tp = va_arg(ap, Token *);
-				fprintf(stderr, "%.*s", tp->len, tp->t);
+				fprintf(stderr, "Type: %s, '%.*s'", toktypeStrs[tp->type], tp->len, tp->t);
 				break;
-
+			case 'x':
+				i = va_arg(ap, int);
+				fprintf(stderr, "0x%X", i);
+				break;
 			case 'r':
 				trp = va_arg(ap, Tokenrow *);
 				for (tp=trp->tp; tp<trp->lp&&tp->type!=NL; tp++) {

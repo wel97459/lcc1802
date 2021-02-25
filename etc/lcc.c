@@ -592,7 +592,8 @@ static void help(void)
 		"-t -tname	emit function tracing calls to printf or to `name'\n",
 		"-target name	is ignored\n",
 		"-tempdir=dir	place temporary files in `dir/'", "\n"
-														  "-Uname	undefine the preprocessor symbol `name'\n",
+		 "-Uname	undefine the preprocessor symbol `name'\n",
+		 "-savetemps saves temp files\n",
 		"-v	show commands as they are executed; 2nd -v suppresses execution\n",
 		"-w	suppress warnings\n",
 		"-Woarg	specify system-specific `arg'\n",

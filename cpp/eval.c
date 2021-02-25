@@ -96,6 +96,7 @@ struct	value tokval(Token *);
 struct value vals[NSTAK], *vp;
 enum toktype ops[NSTAK], *op;
 
+
 /*
  * Evaluate an #if #elif #ifdef #ifndef line.  trp->tp points to the keyword.
  */
@@ -105,14 +106,12 @@ eval(Tokenrow *trp, int kw)
 	Token *tp;
 	Nlist *np;
 	int ntok, rand, line = 107;
-	char str[255];
+
 	trp->tp++;
 	rand = trp->lp - trp->bp;
 	if (kw==KIFDEF || kw==KIFNDEF) {
 		if (rand != 5 && rand != 4 || trp->tp->type!=NAME) {
-			strncpy(str, (char*)trp->tp->t, trp->tp->len);
-			str[trp->tp->len] = 0;
-			error(ERROR, "Syntax error in #ifdef/#ifndef %d, %d, %d, %d, %s", rand, kw, trp->tp->type, trp->tp->len, str);
+			error(ERROR, "Syntax error in #ifdef/#ifndef");
 			return 0;
 		}
 		np = lookup(trp->tp, 0);
@@ -125,98 +124,102 @@ eval(Tokenrow *trp, int kw)
 	vp = vals;
 	op = ops;
 	*op++ = END;
-	error(WARNING,"Starting:");
-	for (rand=0, tp = trp->bp+ntok; tp < trp->lp+1; tp++) {
-		strncpy(str, (char*)tp->t, tp->len);
-		str[tp->len] = 0;
-		fprintf(stderr, "len: %d\n", tp->len);
-		fprintf(stderr, "OP Type: %d, %s\n", tp->type, str);
+	if (verbose) error(WARNING,"Starting:");
+	for (rand=0, tp = trp->bp+ntok; tp < trp->lp; tp++) {
+		if (verbose)
+			if(tp->type != UNCLASS && tp->type != END && tp->type != NL){
+				fprintf(stderr, "OP Type: %s, %.*s\n", toktypeStrs[tp->type], tp->len, (char*)tp->t);
+			}else{
+				fprintf(stderr, "OP Type: %s.\n", toktypeStrs[tp->type]);
+			}
 		switch(tp->type) {
-		case UNCLASS:
-		case WS:
-		case NL:
-			continue;
+			case UNCLASS:
+			case END:
+			case WS:
+			case NL:
+				continue;
 
-		/* nilary */
-		case NAME:
-		case NAME1:
-		case NUMBER:
-		case CCON:
-		case STRING:
-			if (rand){
-				line = 141;
-				goto syntax;
-			}
-			if (vp == &vals[NSTAK]) {
-				error(ERROR, "Eval botch (stack overflow)");
-				return 0;
-			}
-			*vp++ = tokval(tp);
-			rand = 1;
-			continue;
-
-		/* unary */
-		case DEFINED:
-		case TILDE:
-		case NOT:
-			if (rand){
-				line = 141;
-				goto syntax;
-			}			*op++ = tp->type;
-			continue;
-
-		/* unary-binary */
-		case PLUS: case MINUS: case STAR: case AND:
-			if (rand==0) {
-				if (tp->type==MINUS)
-					*op++ = UMINUS;
-				if (tp->type==STAR || tp->type==AND) {
-					error(ERROR, "Illegal operator * or & in #if/#elsif");
+			/* nilary */
+			case NAME:
+			case NAME1:
+			case NUMBER:
+			case CCON:
+			case STRING:
+				if (rand){
+					line = 141;
+					goto syntax;
+				}
+				if (vp == &vals[NSTAK]) {
+					error(ERROR, "Eval botch (stack overflow)");
 					return 0;
 				}
+				*vp++ = tokval(tp);
+				rand = 1;
 				continue;
-			}
-			/* flow through */
 
-		/* plain binary */
-		case EQ: case NEQ: case LEQ: case GEQ: case LSH: case RSH:
-		case LAND: case LOR: case SLASH: case PCT:
-		case LT: case GT: case CIRC: case OR: case QUEST:
-		case COLON: case COMMA:
-			if (rand==0){
-				line = 181;
-				goto syntax;
-			}
-			if (evalop(priority[tp->type])!=0)
+			/* unary */
+			case DEFINED:
+			case TILDE:
+			case NOT:
+				if (rand){
+					line = 141;
+					goto syntax;
+				}			
+				*op++ = tp->type;
+
+				continue;
+
+			/* unary-binary */
+			case PLUS: case MINUS: case STAR: case AND:
+				if (rand==0) {
+					if (tp->type==MINUS)
+						*op++ = UMINUS;
+					if (tp->type==STAR || tp->type==AND) {
+						error(ERROR, "Illegal operator * or & in #if/#elsif");
+						return 0;
+					}
+					continue;
+				}
+				/* flow through */
+
+			/* plain binary */
+			case EQ: case NEQ: case LEQ: case GEQ: case LSH: case RSH:
+			case LAND: case LOR: case SLASH: case PCT:
+			case LT: case GT: case CIRC: case OR: case QUEST:
+			case COLON: case COMMA:
+				if (rand==0){
+					line = 181;
+					goto syntax;
+				}
+				if (evalop(priority[tp->type])!=0)
+					return 0;
+				*op++ = tp->type;
+				rand = 0;
+				continue;
+
+			case LP:
+				if (rand){
+					line = 191;
+					goto syntax;
+				}
+				*op++ = LP;
+				continue;
+
+			case RP:
+				if (!rand){
+					line = 200;
+					goto syntax;
+				}
+				if (evalop(priority[RP])!=0)
+					return 0;
+				if (op<=ops || op[-1]!=LP) {
+					goto syntax;
+				}
+				op--;
+				continue;
+			default:
+				error(ERROR,"Bad operator in #if/#elsif");
 				return 0;
-			*op++ = tp->type;
-			rand = 0;
-			continue;
-
-		case LP:
-			if (rand){
-				line = 191;
-				goto syntax;
-			}
-			*op++ = LP;
-			continue;
-
-		case RP:
-			if (!rand){
-				line = 200;
-				goto syntax;
-			}
-			if (evalop(priority[RP])!=0)
-				return 0;
-			if (op<=ops || op[-1]!=LP) {
-				goto syntax;
-			}
-			op--;
-			continue;
-
-		default:
-			error(ERROR,"Bad operator in #if/#elsif");
-			return 0;
 		}
 	}
 	if (rand==0){
@@ -233,7 +236,7 @@ eval(Tokenrow *trp, int kw)
 		error(ERROR, "Undefined expression value");
 	return vals[0].val;
 syntax:
-	error(ERROR, "Syntax error in #if/#elsif Line: %d", line);
+	error(ERROR, "Syntax error in #if/#elsif Line: %d\n", line);
 	return 0;
 }
 
