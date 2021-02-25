@@ -641,7 +641,7 @@ stmt: IASMV                 "# emit inline assembly\n"
 
 %%
 static void progend(void){
-	print(	"\tinclude lcc1802epiloCX.inc\n");	//standard epilog
+	print(	"\tinclude lcc1802EpiloCX.inc\n");	//standard epilog
 	if (wjrpixie){
 		print(	"\tinclude lcc1802PXcode.inc\n");	//needed for 1861
 	}
@@ -702,12 +702,12 @@ static void progbeg(int argc, char *argv[]) {
 		print("\tcpu\t1805\n");
 	}
 	if (wjrenv){ //environment includes specified
-		print("\tinclude %sprolog.inc\n",wjrenv);
+		print("\tinclude %sProlog.inc\n",wjrenv);
 	}
 	if (wjrpixie){
-		print("\tlisting off\n" "\tinclude lcc1802proloPX.inc\n" "\tlisting on\n");//include pixilated macro package but turn off the listing for now
+		print("\tlisting off\n" "\tinclude lcc1802ProloPX.inc\n" "\tlisting on\n");//include pixilated macro package but turn off the listing for now
 	}else{
-		print("\tlisting off\n" "\tinclude lcc1802proloCX.inc\n" "\tlisting on\n");//include standard macro package but turn off the listing for now
+		print("\tlisting off\n" "\tinclude lcc1802ProloCX.inc\n" "\tlisting on\n");//include standard macro package but turn off the listing for now
 	}
 		
 

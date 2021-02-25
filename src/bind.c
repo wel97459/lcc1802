@@ -11,6 +11,7 @@
 xx(alpha/osf,    alphaIR) \
 xx(mips/irix,    mipsebIR) \
 xx(xr18DH,    	 xr18DHIR) \
+xx(xr18CX,    	 xr18CXIR) \
 xx(sparc/sun,    sparcIR) \
 xx(sparc/solaris,solarisIR) \
 xx(x86/win32,    x86IR) \
