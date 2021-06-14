@@ -17,6 +17,8 @@ int	ifdepth;
 int	ifsatisfied[NIF];
 int	skipping;
 
+const char toktypeStrs[60][16];
+
 char rcsid[] = "$Revision$ $Date$";
 
 const char toktypeStrs[60][16] = {
